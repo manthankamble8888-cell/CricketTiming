@@ -1,11 +1,15 @@
 package com.crickettiming.app;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -24,18 +28,20 @@ import java.util.Locale;
 
 public class OverlayService extends Service {
 
+    private static final String CHANNEL_ID = "CricketTimingService";
+    private static final int NOTIFICATION_ID = 1001;
+
     private WindowManager windowManager;
     private LinearLayout overlay;
 
     private TextView timerText;
     private TextView statusText;
     private TextView statsText;
-
     private EditText targetInput;
 
     private TimingBar timingBar;
 
-    private Handler handler = new Handler();
+    private final Handler handler = new Handler();
 
     private long startTime = 0;
     private boolean running = false;
@@ -47,16 +53,21 @@ public class OverlayService extends Service {
 
     private final ArrayList<Double> shots = new ArrayList<>();
 
+    private boolean overlayCreated = false;
+
     private final Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
 
-            if (running) {
+            if (!running || overlay == null) {
+                return;
+            }
 
-                currentTime =
-                        (SystemClock.elapsedRealtime() - startTime)
-                                / 1000.0;
+            currentTime =
+                    (SystemClock.elapsedRealtime() - startTime)
+                            / 1000.0;
 
+            if (timerText != null) {
                 timerText.setText(
                         String.format(
                                 Locale.US,
@@ -64,20 +75,28 @@ public class OverlayService extends Service {
                                 currentTime
                         )
                 );
+            }
 
+            if (timingBar != null) {
                 timingBar.setValues(
                         currentTime,
                         targetTime
                 );
-
-                handler.postDelayed(this, 20);
             }
+
+            handler.postDelayed(this, 20);
         }
     };
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        createNotificationChannel();
+        startForeground(
+                NOTIFICATION_ID,
+                createNotification()
+        );
 
         if (!Settings.canDrawOverlays(this)) {
             stopSelf();
@@ -90,13 +109,81 @@ public class OverlayService extends Service {
         createOverlay();
     }
 
+    private void createNotificationChannel() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            NotificationChannel channel =
+                    new NotificationChannel(
+                            CHANNEL_ID,
+                            "Cricket Timing",
+                            NotificationManager.IMPORTANCE_LOW
+                    );
+
+            channel.setDescription(
+                    "Keeps the cricket timing overlay running."
+            );
+
+            NotificationManager manager =
+                    getSystemService(NotificationManager.class);
+
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private Notification createNotification() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            return new Notification.Builder(
+                    this,
+                    CHANNEL_ID
+            )
+                    .setContentTitle("Cricket Timing")
+                    .setContentText("Timing overlay is running")
+                    .setSmallIcon(
+                            android.R.drawable.ic_media_play
+                    )
+                    .setOngoing(true)
+                    .build();
+
+        } else {
+
+            return new Notification.Builder(this)
+                    .setContentTitle("Cricket Timing")
+                    .setContentText("Timing overlay is running")
+                    .setSmallIcon(
+                            android.R.drawable.ic_media_play
+                    )
+                    .setOngoing(true)
+                    .build();
+        }
+    }
+
     private void createOverlay() {
+
+        if (overlayCreated) {
+            return;
+        }
 
         overlay = new LinearLayout(this);
 
-        overlay.setOrientation(LinearLayout.VERTICAL);
-        overlay.setGravity(Gravity.CENTER);
-        overlay.setPadding(18, 14, 18, 14);
+        overlay.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        overlay.setGravity(
+                Gravity.CENTER
+        );
+
+        overlay.setPadding(
+                18,
+                14,
+                18,
+                14
+        );
 
         overlay.setBackgroundColor(
                 Color.rgb(17, 24, 39)
@@ -126,9 +213,17 @@ public class OverlayService extends Service {
                         LinearLayout.LayoutParams.WRAP_CONTENT
                 );
 
-        timerParams.setMargins(0, 5, 0, 3);
+        timerParams.setMargins(
+                0,
+                5,
+                0,
+                3
+        );
 
-        overlay.addView(timerText, timerParams);
+        overlay.addView(
+                timerText,
+                timerParams
+        );
 
         // TIMING BAR
         timingBar = new TimingBar();
@@ -139,9 +234,17 @@ public class OverlayService extends Service {
                         45
                 );
 
-        barParams.setMargins(0, 4, 0, 6);
+        barParams.setMargins(
+                0,
+                4,
+                0,
+                6
+        );
 
-        overlay.addView(timingBar, barParams);
+        overlay.addView(
+                timingBar,
+                barParams
+        );
 
         // STATUS
         statusText = new TextView(this);
@@ -156,7 +259,10 @@ public class OverlayService extends Service {
         // TARGET LABEL
         TextView targetLabel = new TextView(this);
 
-        targetLabel.setText("Target (seconds)");
+        targetLabel.setText(
+                "Target (seconds)"
+        );
+
         targetLabel.setTextColor(Color.WHITE);
         targetLabel.setTextSize(13);
         targetLabel.setGravity(Gravity.CENTER);
@@ -168,7 +274,6 @@ public class OverlayService extends Service {
 
         targetInput.setText("1.650");
         targetInput.setTextColor(Color.WHITE);
-        targetInput.setHintTextColor(Color.GRAY);
         targetInput.setTextSize(16);
         targetInput.setGravity(Gravity.CENTER);
         targetInput.setSingleLine(true);
@@ -180,14 +285,14 @@ public class OverlayService extends Service {
 
         overlay.addView(targetInput);
 
-        // START BUTTON
+        // START
         Button startButton = new Button(this);
 
         startButton.setText("START");
 
         overlay.addView(startButton);
 
-        // HIT BUTTON
+        // HIT
         Button hitButton = new Button(this);
 
         hitButton.setText("HIT");
@@ -195,14 +300,16 @@ public class OverlayService extends Service {
 
         overlay.addView(hitButton);
 
-        // NEW SESSION BUTTON
+        // NEW SESSION
         Button newSessionButton = new Button(this);
 
-        newSessionButton.setText("NEW SESSION");
+        newSessionButton.setText(
+                "NEW SESSION"
+        );
 
         overlay.addView(newSessionButton);
 
-        // CLOSE BUTTON
+        // CLOSE
         Button closeButton = new Button(this);
 
         closeButton.setText("CLOSE");
@@ -219,7 +326,13 @@ public class OverlayService extends Service {
         statsText.setTextColor(Color.WHITE);
         statsText.setTextSize(15);
         statsText.setGravity(Gravity.CENTER);
-        statsText.setPadding(0, 8, 0, 0);
+
+        statsText.setPadding(
+                0,
+                8,
+                0,
+                0
+        );
 
         overlay.addView(statsText);
 
@@ -229,12 +342,7 @@ public class OverlayService extends Service {
                         280,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-
-                        // IMPORTANT:
-                        // The old FLAG_NOT_FOCUSABLE prevented
-                        // the EditText from being typed into.
                         WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-
                         PixelFormat.TRANSLUCENT
                 );
 
@@ -247,12 +355,25 @@ public class OverlayService extends Service {
         params.softInputMode =
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 
-        windowManager.addView(
-                overlay,
-                params
-        );
+        try {
 
-        // START
+            windowManager.addView(
+                    overlay,
+                    params
+            );
+
+            overlayCreated = true;
+
+        } catch (Exception e) {
+
+            overlay = null;
+            overlayCreated = false;
+
+            stopSelf();
+            return;
+        }
+
+        // START BUTTON
         startButton.setOnClickListener(v -> {
 
             readTarget();
@@ -266,8 +387,13 @@ public class OverlayService extends Service {
 
             timerText.setText("0.000 s");
 
-            statusText.setText("Timing...");
-            statusText.setTextColor(Color.WHITE);
+            statusText.setText(
+                    "Timing..."
+            );
+
+            statusText.setTextColor(
+                    Color.WHITE
+            );
 
             timingBar.setValues(
                     0.0,
@@ -276,14 +402,18 @@ public class OverlayService extends Service {
 
             startButton.setEnabled(false);
             hitButton.setEnabled(true);
-
             targetInput.setEnabled(false);
 
-            handler.removeCallbacks(timerRunnable);
-            handler.post(timerRunnable);
+            handler.removeCallbacks(
+                    timerRunnable
+            );
+
+            handler.post(
+                    timerRunnable
+            );
         });
 
-        // HIT
+        // HIT BUTTON
         hitButton.setOnClickListener(v -> {
 
             if (!running) {
@@ -291,12 +421,15 @@ public class OverlayService extends Service {
             }
 
             currentTime =
-                    (SystemClock.elapsedRealtime() - startTime)
+                    (SystemClock.elapsedRealtime()
+                            - startTime)
                             / 1000.0;
 
             running = false;
 
-            handler.removeCallbacks(timerRunnable);
+            handler.removeCallbacks(
+                    timerRunnable
+            );
 
             timerText.setText(
                     String.format(
@@ -314,12 +447,10 @@ public class OverlayService extends Service {
             shots.add(currentTime);
 
             showResult();
-
             updateStats();
 
             startButton.setEnabled(true);
             hitButton.setEnabled(false);
-
             targetInput.setEnabled(true);
         });
 
@@ -328,16 +459,25 @@ public class OverlayService extends Service {
 
             running = false;
 
-            handler.removeCallbacks(timerRunnable);
+            handler.removeCallbacks(
+                    timerRunnable
+            );
 
             shots.clear();
 
             currentTime = 0.0;
 
-            timerText.setText("0.000 s");
+            timerText.setText(
+                    "0.000 s"
+            );
 
-            statusText.setText("Ready");
-            statusText.setTextColor(Color.LTGRAY);
+            statusText.setText(
+                    "Ready"
+            );
+
+            statusText.setTextColor(
+                    Color.LTGRAY
+            );
 
             timingBar.setValues(
                     0.0,
@@ -346,7 +486,6 @@ public class OverlayService extends Service {
 
             startButton.setEnabled(true);
             hitButton.setEnabled(false);
-
             targetInput.setEnabled(true);
 
             updateStats();
@@ -357,12 +496,14 @@ public class OverlayService extends Service {
 
             running = false;
 
-            handler.removeCallbacks(timerRunnable);
+            handler.removeCallbacks(
+                    timerRunnable
+            );
 
             stopSelf();
         });
 
-        // DRAG OVERLAY
+        // DRAG
         makeDraggable(
                 title,
                 overlay,
@@ -421,7 +562,11 @@ public class OverlayService extends Service {
             );
 
             statusText.setTextColor(
-                    Color.rgb(50, 220, 100)
+                    Color.rgb(
+                            50,
+                            220,
+                            100
+                    )
             );
 
         } else if (difference < 0) {
@@ -435,7 +580,11 @@ public class OverlayService extends Service {
             );
 
             statusText.setTextColor(
-                    Color.rgb(70, 170, 255)
+                    Color.rgb(
+                            70,
+                            170,
+                            255
+                    )
             );
 
         } else {
@@ -449,7 +598,11 @@ public class OverlayService extends Service {
             );
 
             statusText.setTextColor(
-                    Color.rgb(255, 80, 80)
+                    Color.rgb(
+                            255,
+                            80,
+                            80
+                    )
             );
         }
     }
@@ -512,12 +665,17 @@ public class OverlayService extends Service {
                             MotionEvent event
                     ) {
 
-                        switch (event.getAction()) {
+                        switch (
+                                event.getAction()
+                        ) {
 
                             case MotionEvent.ACTION_DOWN:
 
-                                initialX = params.x;
-                                initialY = params.y;
+                                initialX =
+                                        params.x;
+
+                                initialY =
+                                        params.y;
 
                                 initialTouchX =
                                         event.getRawX();
@@ -543,10 +701,16 @@ public class OverlayService extends Service {
                                                 initialTouchY
                                         );
 
-                                windowManager.updateViewLayout(
-                                        overlayView,
-                                        params
-                                );
+                                try {
+
+                                    windowManager
+                                            .updateViewLayout(
+                                                    overlayView,
+                                                    params
+                                            );
+
+                                } catch (Exception ignored) {
+                                }
 
                                 return true;
 
@@ -567,15 +731,21 @@ public class OverlayService extends Service {
 
     private class TimingBar extends View {
 
-        private Paint paint;
+        private final Paint paint;
 
         private double barTime = 0.0;
         private double barTarget = 1.650;
 
         public TimingBar() {
-            super(OverlayService.this);
 
-            paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            super(
+                    OverlayService.this
+            );
+
+            paint =
+                    new Paint(
+                            Paint.ANTI_ALIAS_FLAG
+                    );
         }
 
         public void setValues(
@@ -590,13 +760,20 @@ public class OverlayService extends Service {
         }
 
         @Override
-        protected void onDraw(Canvas canvas) {
+        protected void onDraw(
+                Canvas canvas
+        ) {
+
             super.onDraw(canvas);
 
-            float width = getWidth();
-            float height = getHeight();
+            float width =
+                    getWidth();
 
-            float centerY = height / 2f;
+            float height =
+                    getHeight();
+
+            float centerY =
+                    height / 2f;
 
             double maximumTime =
                     barTarget * 1.30;
@@ -605,12 +782,18 @@ public class OverlayService extends Service {
                 maximumTime = 2.0;
             }
 
-            // Background bar
+            // Background
             paint.setColor(
-                    Color.rgb(70, 78, 95)
+                    Color.rgb(
+                            70,
+                            78,
+                            95
+                    )
             );
 
-            paint.setStrokeWidth(10f);
+            paint.setStrokeWidth(
+                    10f
+            );
 
             canvas.drawLine(
                     10,
@@ -620,123 +803,9 @@ public class OverlayService extends Service {
                     paint
             );
 
-            // Target position
+            // Target
             float targetX =
                     10 +
                     (float) (
-                            (barTarget / maximumTime)
-                                    * (width - 20)
-                    );
-
-            // Perfect zone
-            double perfectStart =
-                    Math.max(
-                            0,
-                            barTarget - perfectTolerance
-                    );
-
-            double perfectEnd =
-                    barTarget + perfectTolerance;
-
-            float perfectStartX =
-                    10 +
-                    (float) (
-                            (perfectStart / maximumTime)
-                                    * (width - 20)
-                    );
-
-            float perfectEndX =
-                    10 +
-                    (float) (
-                            (perfectEnd / maximumTime)
-                                    * (width - 20)
-                    );
-
-            paint.setColor(
-                    Color.rgb(50, 220, 100)
-            );
-
-            paint.setStrokeWidth(14f);
-
-            canvas.drawLine(
-                    perfectStartX,
-                    centerY,
-                    perfectEndX,
-                    centerY,
-                    paint
-            );
-
-            // Target marker
-            paint.setColor(Color.WHITE);
-            paint.setStrokeWidth(4f);
-
-            canvas.drawLine(
-                    targetX,
-                    5,
-                    targetX,
-                    height - 5,
-                    paint
-            );
-
-            // Current timing marker
-            double limitedTime =
-                    Math.min(
-                            Math.max(barTime, 0),
-                            maximumTime
-                    );
-
-            float currentX =
-                    10 +
-                    (float) (
-                            (limitedTime / maximumTime)
-                                    * (width - 20)
-                    );
-
-            paint.setColor(
-                    Color.YELLOW
-            );
-
-            paint.setStrokeWidth(7f);
-
-            canvas.drawLine(
-                    currentX,
-                    2,
-                    currentX,
-                    height - 2,
-                    paint
-            );
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-
-        running = false;
-
-        handler.removeCallbacks(
-                timerRunnable
-        );
-
-        if (overlay != null &&
-                windowManager != null) {
-
-            try {
-
-                windowManager.removeView(
-                        overlay
-                );
-
-            } catch (Exception ignored) {
-            }
-
-            overlay = null;
-        }
-
-        super.onDestroy();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-                              }
+                            (barTarget /
+                
