@@ -2,14 +2,14 @@ package com.crickettiming.app;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.graphics.Color;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.text.InputType;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -19,33 +19,12 @@ public class MainActivity extends Activity {
     private TextView timerText;
     private TextView statusText;
     private TextView resultsText;
+    private EditText targetInput;
 
-    private Button startButton;
-    private Button hitButton;
-    private Button sessionButton;
-
-    private Handler handler = new Handler();
-
-    private boolean running = false;
     private long startTime = 0;
+    private boolean timing = false;
 
-    private ArrayList<Double> shots = new ArrayList<>();
-
-    private final Runnable timerRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (running) {
-                double seconds =
-                        (SystemClock.elapsedRealtime() - startTime) / 1000.0;
-
-                timerText.setText(
-                        String.format(Locale.US, "%.3f seconds", seconds)
-                );
-
-                handler.postDelayed(this, 16);
-            }
-        }
-    };
+    private final ArrayList<Double> shots = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,198 +32,232 @@ public class MainActivity extends Activity {
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        layout.setPadding(40, 50, 40, 40);
+        layout.setGravity(Gravity.CENTER_HORIZONTAL);
+        layout.setPadding(40, 40, 40, 40);
         layout.setBackgroundColor(Color.rgb(17, 24, 39));
 
-        // TITLE
         TextView title = new TextView(this);
         title.setText("🏏 Cricket Timing");
         title.setTextColor(Color.WHITE);
-        title.setTextSize(38);
+        title.setTextSize(34);
         title.setGravity(Gravity.CENTER);
-        title.setPadding(0, 0, 0, 35);
+        title.setPadding(0, 20, 0, 20);
 
-        // TIMER
         timerText = new TextView(this);
         timerText.setText("0.000 seconds");
         timerText.setTextColor(Color.WHITE);
-        timerText.setTextSize(42);
+        timerText.setTextSize(38);
         timerText.setGravity(Gravity.CENTER);
-        timerText.setPadding(0, 0, 0, 20);
+        timerText.setPadding(0, 20, 0, 10);
 
-        // STATUS
         statusText = new TextView(this);
-        statusText.setText("Ready");
+        statusText.setText("Set your target time");
         statusText.setTextColor(Color.WHITE);
-        statusText.setTextSize(24);
+        statusText.setTextSize(22);
         statusText.setGravity(Gravity.CENTER);
-        statusText.setPadding(0, 0, 0, 35);
+        statusText.setPadding(0, 10, 0, 20);
 
-        // START BUTTON
-        startButton = new Button(this);
+        targetInput = new EditText(this);
+        targetInput.setHint("Target time (e.g. 1.650)");
+        targetInput.setHintTextColor(Color.GRAY);
+        targetInput.setTextColor(Color.WHITE);
+        targetInput.setTextSize(20);
+        targetInput.setGravity(Gravity.CENTER);
+        targetInput.setInputType(
+                InputType.TYPE_CLASS_NUMBER |
+                InputType.TYPE_NUMBER_FLAG_DECIMAL
+        );
+
+        Button startButton = new Button(this);
         startButton.setText("START");
-        startButton.setTextSize(20);
 
-        // HIT BUTTON
-        hitButton = new Button(this);
+        Button hitButton = new Button(this);
         hitButton.setText("HIT");
-        hitButton.setTextSize(20);
 
-        // NEW SESSION BUTTON
-        sessionButton = new Button(this);
-        sessionButton.setText("NEW SESSION");
-        sessionButton.setTextSize(20);
+        Button newSessionButton = new Button(this);
+        newSessionButton.setText("NEW SESSION");
 
-        // RESULTS
         resultsText = new TextView(this);
         resultsText.setText("Results");
         resultsText.setTextColor(Color.WHITE);
-        resultsText.setTextSize(24);
-        resultsText.setPadding(0, 40, 0, 0);
+        resultsText.setTextSize(22);
+        resultsText.setPadding(0, 25, 0, 10);
 
-        // ADD VIEWS
         layout.addView(title);
         layout.addView(timerText);
         layout.addView(statusText);
-
+        layout.addView(targetInput);
         layout.addView(startButton);
         layout.addView(hitButton);
-        layout.addView(sessionButton);
-
+        layout.addView(newSessionButton);
         layout.addView(resultsText);
 
         setContentView(layout);
 
-        // START
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                if (!running) {
-
-                    startTime = SystemClock.elapsedRealtime();
-                    running = true;
-
-                    statusText.setText("Timing...");
-
-                    handler.removeCallbacks(timerRunnable);
-                    handler.post(timerRunnable);
-                }
+                startTimer();
             }
         });
 
-        // HIT
         hitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                hitTimer();
+            }
+        });
 
-                if (running) {
+        newSessionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                newSession();
+            }
+        });
+    }
 
-                    long elapsed =
-                            SystemClock.elapsedRealtime() - startTime;
+    private void startTimer() {
+        startTime = System.nanoTime();
+        timing = true;
 
-                    double seconds = elapsed / 1000.0;
+        statusText.setText("Timing...");
 
-                    running = false;
-
-                    handler.removeCallbacks(timerRunnable);
+        timerText.post(new Runnable() {
+            @Override
+            public void run() {
+                if (timing) {
+                    double seconds =
+                            (System.nanoTime() - startTime) / 1_000_000_000.0;
 
                     timerText.setText(
-                            String.format(
-                                    Locale.US,
-                                    "%.3f seconds",
-                                    seconds
-                            )
+                            String.format(Locale.US, "%.3f seconds", seconds)
                     );
 
-                    statusText.setText("HIT recorded");
-
-                    shots.add(seconds);
-
-                    updateResults();
+                    timerText.postDelayed(this, 20);
                 }
             }
         });
+    }
 
-        // NEW SESSION
-        sessionButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+    private void hitTimer() {
+        if (!timing) {
+            return;
+        }
 
-                running = false;
+        double seconds =
+                (System.nanoTime() - startTime) / 1_000_000_000.0;
 
-                handler.removeCallbacks(timerRunnable);
+        timing = false;
 
-                shots.clear();
+        timerText.setText(
+                String.format(Locale.US, "%.3f seconds", seconds)
+        );
 
-                timerText.setText("0.000 seconds");
-                statusText.setText("Ready");
+        shots.add(seconds);
 
-                resultsText.setText("Results");
+        double target = getTargetTime();
+
+        if (target > 0) {
+            double difference = seconds - target;
+
+            if (Math.abs(difference) < 0.001) {
+                statusText.setText("🎯 PERFECT!");
+            } else if (difference < 0) {
+                statusText.setText(
+                        String.format(
+                                Locale.US,
+                                "⚡ %.3f s early",
+                                Math.abs(difference)
+                        )
+                );
+            } else {
+                statusText.setText(
+                        String.format(
+                                Locale.US,
+                                "⏱ %.3f s late",
+                                difference
+                        )
+                );
             }
-        });
+        } else {
+            statusText.setText("HIT recorded");
+        }
+
+        updateResults();
+    }
+
+    private double getTargetTime() {
+        String text = targetInput.getText().toString().trim();
+
+        if (text.isEmpty()) {
+            return 0;
+        }
+
+        try {
+            return Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private void updateResults() {
+        StringBuilder result = new StringBuilder();
 
-        StringBuilder text = new StringBuilder();
-
-        text.append("Results\n\n");
-
-        double total = 0;
-        double best = Double.MAX_VALUE;
+        result.append("Results\n\n");
 
         for (int i = 0; i < shots.size(); i++) {
-
-            double shot = shots.get(i);
-
-            total += shot;
-
-            if (shot < best) {
-                best = shot;
-            }
-
-            text.append("Shot ")
-                    .append(i + 1)
-                    .append(" — ")
-                    .append(String.format(
+            result.append(
+                    String.format(
                             Locale.US,
-                            "%.3f",
-                            shot
-                    ))
-                    .append(" s\n");
+                            "Shot %d — %.3f s\n",
+                            i + 1,
+                            shots.get(i)
+                    )
+            );
         }
 
         if (!shots.isEmpty()) {
+            double best = shots.get(0);
+            double total = 0;
+
+            for (double shot : shots) {
+                if (shot < best) {
+                    best = shot;
+                }
+                total += shot;
+            }
 
             double average = total / shots.size();
 
-            text.append("\nBest — ")
-                    .append(String.format(
+            result.append("\n");
+            result.append(
+                    String.format(
                             Locale.US,
-                            "%.3f",
+                            "Best — %.3f s\n",
                             best
-                    ))
-                    .append(" s\n");
+                    )
+            );
 
-            text.append("Average — ")
-                    .append(String.format(
+            result.append(
+                    String.format(
                             Locale.US,
-                            "%.3f",
+                            "Average — %.3f s",
                             average
-                    ))
-                    .append(" s");
+                    )
+            );
         }
 
-        resultsText.setText(text.toString());
+        resultsText.setText(result.toString());
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private void newSession() {
+        timing = false;
+        startTime = 0;
 
-        running = false;
-        handler.removeCallbacks(timerRunnable);
+        shots.clear();
+
+        timerText.setText("0.000 seconds");
+        statusText.setText("Set your target time");
+        resultsText.setText("Results");
     }
 }
