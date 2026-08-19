@@ -2,23 +2,40 @@ package com.crickettiming.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.graphics.Color;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.os.SystemClock;
 
 public class MainActivity extends Activity {
 
     private TextView timerText;
-    private long startTime;
+    private Handler handler;
+    private long startTime = 0;
     private boolean running = false;
+
+    private final Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (running) {
+                long elapsed = System.nanoTime() - startTime;
+                double seconds = elapsed / 1_000_000_000.0;
+
+                timerText.setText(String.format("%.3f seconds", seconds));
+
+                handler.postDelayed(this, 10);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        handler = new Handler(Looper.getMainLooper());
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -35,7 +52,7 @@ public class MainActivity extends Activity {
         timerText = new TextView(this);
         timerText.setText("0.000 seconds");
         timerText.setTextColor(Color.WHITE);
-        timerText.setTextSize(28);
+        timerText.setTextSize(30);
         timerText.setGravity(Gravity.CENTER);
         timerText.setPadding(0, 40, 0, 40);
 
@@ -48,34 +65,28 @@ public class MainActivity extends Activity {
         Button resetButton = new Button(this);
         resetButton.setText("RESET");
 
-        startButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startTime = SystemClock.elapsedRealtime();
-                running = true;
-                timerText.setText("Timing...");
-            }
+        startButton.setOnClickListener(v -> {
+            startTime = System.nanoTime();
+            running = true;
+            handler.removeCallbacks(timerRunnable);
+            handler.post(timerRunnable);
         });
 
-        hitButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (running) {
-                    long elapsed = SystemClock.elapsedRealtime() - startTime;
-                    double seconds = elapsed / 1000.0;
-
-                    timerText.setText(String.format("%.3f seconds", seconds));
-                    running = false;
-                }
-            }
-        });
-
-        resetButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        hitButton.setOnClickListener(v -> {
+            if (running) {
                 running = false;
-                timerText.setText("0.000 seconds");
+
+                long elapsed = System.nanoTime() - startTime;
+                double seconds = elapsed / 1_000_000_000.0;
+
+                timerText.setText(String.format("%.3f seconds", seconds));
             }
+        });
+
+        resetButton.setOnClickListener(v -> {
+            running = false;
+            handler.removeCallbacks(timerRunnable);
+            timerText.setText("0.000 seconds");
         });
 
         layout.addView(title);
