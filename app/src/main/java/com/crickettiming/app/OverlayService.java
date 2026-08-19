@@ -812,8 +812,7 @@ public class OverlayService extends Service {
                         difference
                 );
 
-        if (absoluteDifference <=
-                perfectTolarance            perfectTolerance) {
+        if (absoluteDifference <= perfectTolerance) {
 
             statusText.setText(
                     String.format(
