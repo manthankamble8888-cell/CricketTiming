@@ -1,6 +1,7 @@
 package com.crickettiming.app;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -14,6 +15,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -228,7 +230,12 @@ public class OverlayService extends Service {
                         280,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+
+                        // IMPORTANT:
+                        // This allows the EditText to receive focus
+                        // and lets the keyboard appear.
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+
                         PixelFormat.TRANSLUCENT
                 );
 
@@ -238,9 +245,37 @@ public class OverlayService extends Service {
         params.x = 15;
         params.y = 80;
 
+        params.softInputMode =
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
+
         windowManager.addView(
                 overlay,
                 params
+        );
+
+        // TARGET INPUT FOCUS
+        targetInput.setOnFocusChangeListener(
+                (v, hasFocus) -> {
+
+                    if (hasFocus) {
+
+                        targetInput.selectAll();
+
+                        InputMethodManager imm =
+                                (InputMethodManager)
+                                        getSystemService(
+                                                Context.INPUT_METHOD_SERVICE
+                                        );
+
+                        if (imm != null) {
+
+                            imm.showSoftInput(
+                                    targetInput,
+                                    InputMethodManager.SHOW_IMPLICIT
+                            );
+                        }
+                    }
+                }
         );
 
         // START
@@ -589,7 +624,6 @@ public class OverlayService extends Service {
 
             float centerY = height / 2f;
 
-            // The bar extends a little beyond the target.
             double maximumTime =
                     barTarget * 1.30;
 
