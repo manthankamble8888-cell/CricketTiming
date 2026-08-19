@@ -486,6 +486,7 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 overlay,
                 params
         );
+        makeDraggable(title, overlay, params);
 
         // ========================================================
         // TARGET INPUT CLICK
