@@ -1,0 +1,2 @@
+# CricketTiming
+Cricket timing helper
