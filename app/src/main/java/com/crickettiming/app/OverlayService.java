@@ -542,5 +542,3 @@ public class OverlayService extends Service {
         return null;
     }
 }
-
-After committing, let GitHub Actions finish. You don't need to install this version immediately if we're continuing development; we'll do a full test after the next few features are ready.
