@@ -819,7 +819,7 @@ public class OverlayService extends Service {
                     );
 
                     updateStats();
-                }
+                });
                 // CLOSE
         closeButton.setOnClickListener(
                 v -> {
