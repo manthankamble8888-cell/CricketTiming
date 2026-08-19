@@ -2,7 +2,9 @@ package com.crickettiming.app;
 
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.IBinder;
@@ -12,8 +14,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
-import android.content.Context;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -32,6 +32,8 @@ public class OverlayService extends Service {
     private TextView statsText;
 
     private EditText targetInput;
+
+    private TimingBar timingBar;
 
     private Handler handler = new Handler();
 
@@ -61,6 +63,11 @@ public class OverlayService extends Service {
                                 "%.3f s",
                                 currentTime
                         )
+                );
+
+                timingBar.setValues(
+                        currentTime,
+                        targetTime
                 );
 
                 handler.postDelayed(this, 20);
@@ -122,6 +129,19 @@ public class OverlayService extends Service {
         timerParams.setMargins(0, 5, 0, 3);
 
         overlay.addView(timerText, timerParams);
+
+        // TIMING BAR
+        timingBar = new TimingBar();
+
+        LinearLayout.LayoutParams barParams =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        45
+                );
+
+        barParams.setMargins(0, 4, 0, 6);
+
+        overlay.addView(timingBar, barParams);
 
         // STATUS
         statusText = new TextView(this);
@@ -203,20 +223,12 @@ public class OverlayService extends Service {
         overlay.addView(statsText);
 
         // WINDOW
-        //
-        // IMPORTANT:
-        // We removed FLAG_NOT_FOCUSABLE so the EditText
-        // can receive keyboard input.
-        //
-        // FLAG_NOT_TOUCH_MODAL allows touches outside the
-        // overlay to continue going to the game.
-        //
         WindowManager.LayoutParams params =
                 new WindowManager.LayoutParams(
                         280,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                         PixelFormat.TRANSLUCENT
                 );
 
@@ -230,26 +242,6 @@ public class OverlayService extends Service {
                 overlay,
                 params
         );
-
-        // TARGET INPUT
-        targetInput.setOnClickListener(v -> {
-
-            targetInput.requestFocus();
-
-            InputMethodManager imm =
-                    (InputMethodManager)
-                            getSystemService(
-                                    Context.INPUT_METHOD_SERVICE
-                            );
-
-            if (imm != null) {
-
-                imm.showSoftInput(
-                        targetInput,
-                        InputMethodManager.SHOW_IMPLICIT
-                );
-            }
-        });
 
         // START
         startButton.setOnClickListener(v -> {
@@ -268,24 +260,15 @@ public class OverlayService extends Service {
             statusText.setText("Timing...");
             statusText.setTextColor(Color.WHITE);
 
+            timingBar.setValues(
+                    0.0,
+                    targetTime
+            );
+
             startButton.setEnabled(false);
             hitButton.setEnabled(true);
 
             targetInput.setEnabled(false);
-
-            InputMethodManager imm =
-                    (InputMethodManager)
-                            getSystemService(
-                                    Context.INPUT_METHOD_SERVICE
-                            );
-
-            if (imm != null) {
-
-                imm.hideSoftInputFromWindow(
-                        targetInput.getWindowToken(),
-                        0
-                );
-            }
 
             handler.removeCallbacks(timerRunnable);
             handler.post(timerRunnable);
@@ -312,6 +295,11 @@ public class OverlayService extends Service {
                             "%.3f s",
                             currentTime
                     )
+            );
+
+            timingBar.setValues(
+                    currentTime,
+                    targetTime
             );
 
             shots.add(currentTime);
@@ -341,6 +329,11 @@ public class OverlayService extends Service {
 
             statusText.setText("Ready");
             statusText.setTextColor(Color.LTGRAY);
+
+            timingBar.setValues(
+                    0.0,
+                    targetTime
+            );
 
             startButton.setEnabled(true);
             hitButton.setEnabled(false);
@@ -387,6 +380,11 @@ public class OverlayService extends Service {
                         parsed < 20.0) {
 
                     targetTime = parsed;
+
+                    timingBar.setValues(
+                            currentTime,
+                            targetTime
+                    );
                 }
             }
 
@@ -552,6 +550,154 @@ public class OverlayService extends Service {
                     }
                 }
         );
+    }
+
+    // ============================================================
+    // LIVE TIMING BAR
+    // ============================================================
+
+    private class TimingBar extends View {
+
+        private Paint paint;
+
+        private double barTime = 0.0;
+        private double barTarget = 1.650;
+
+        public TimingBar() {
+            super(OverlayService.this);
+
+            paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        }
+
+        public void setValues(
+                double current,
+                double target
+        ) {
+
+            barTime = current;
+            barTarget = target;
+
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+
+            float width = getWidth();
+            float height = getHeight();
+
+            float centerY = height / 2f;
+
+            // The bar extends a little beyond the target.
+            double maximumTime =
+                    barTarget * 1.30;
+
+            if (maximumTime <= 0) {
+                maximumTime = 2.0;
+            }
+
+            // Background bar
+            paint.setColor(
+                    Color.rgb(70, 78, 95)
+            );
+
+            paint.setStrokeWidth(10f);
+
+            canvas.drawLine(
+                    10,
+                    centerY,
+                    width - 10,
+                    centerY,
+                    paint
+            );
+
+            // Target position
+            float targetX =
+                    10 +
+                    (float) (
+                            (barTarget / maximumTime)
+                                    * (width - 20)
+                    );
+
+            // Perfect zone
+            double perfectStart =
+                    Math.max(
+                            0,
+                            barTarget - perfectTolerance
+                    );
+
+            double perfectEnd =
+                    barTarget + perfectTolerance;
+
+            float perfectStartX =
+                    10 +
+                    (float) (
+                            (perfectStart / maximumTime)
+                                    * (width - 20)
+                    );
+
+            float perfectEndX =
+                    10 +
+                    (float) (
+                            (perfectEnd / maximumTime)
+                                    * (width - 20)
+                    );
+
+            paint.setColor(
+                    Color.rgb(50, 220, 100)
+            );
+
+            paint.setStrokeWidth(14f);
+
+            canvas.drawLine(
+                    perfectStartX,
+                    centerY,
+                    perfectEndX,
+                    centerY,
+                    paint
+            );
+
+            // Target marker
+            paint.setColor(Color.WHITE);
+            paint.setStrokeWidth(4f);
+
+            canvas.drawLine(
+                    targetX,
+                    5,
+                    targetX,
+                    height - 5,
+                    paint
+            );
+
+            // Current timing marker
+            double limitedTime =
+                    Math.min(
+                            Math.max(barTime, 0),
+                            maximumTime
+                    );
+
+            float currentX =
+                    10 +
+                    (float) (
+                            (limitedTime / maximumTime)
+                                    * (width - 20)
+                    );
+
+            paint.setColor(
+                    Color.YELLOW
+            );
+
+            paint.setStrokeWidth(7f);
+
+            canvas.drawLine(
+                    currentX,
+                    2,
+                    currentX,
+                    height - 2,
+                    paint
+            );
+        }
     }
 
     @Override
