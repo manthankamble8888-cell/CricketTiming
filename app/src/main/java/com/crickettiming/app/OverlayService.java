@@ -8,11 +8,12 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.provider.Settings;
-import android.text.InputType;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -88,7 +89,7 @@ public class OverlayService extends Service {
 
         overlay.setOrientation(LinearLayout.VERTICAL);
         overlay.setGravity(Gravity.CENTER);
-        overlay.setPadding(10, 8, 10, 8);
+        overlay.setPadding(18, 14, 18, 14);
 
         overlay.setBackgroundColor(
                 Color.rgb(17, 24, 39)
@@ -99,7 +100,7 @@ public class OverlayService extends Service {
 
         title.setText("🏏 Timing");
         title.setTextColor(Color.WHITE);
-        title.setTextSize(16);
+        title.setTextSize(20);
         title.setGravity(Gravity.CENTER);
 
         overlay.addView(title);
@@ -109,7 +110,7 @@ public class OverlayService extends Service {
 
         timerText.setText("0.000 s");
         timerText.setTextColor(Color.WHITE);
-        timerText.setTextSize(22);
+        timerText.setTextSize(28);
         timerText.setGravity(Gravity.CENTER);
 
         LinearLayout.LayoutParams timerParams =
@@ -118,7 +119,7 @@ public class OverlayService extends Service {
                         LinearLayout.LayoutParams.WRAP_CONTENT
                 );
 
-        timerParams.setMargins(0, 2, 0, 1);
+        timerParams.setMargins(0, 5, 0, 3);
 
         overlay.addView(timerText, timerParams);
 
@@ -127,7 +128,7 @@ public class OverlayService extends Service {
 
         statusText.setText("Ready");
         statusText.setTextColor(Color.LTGRAY);
-        statusText.setTextSize(12);
+        statusText.setTextSize(15);
         statusText.setGravity(Gravity.CENTER);
 
         overlay.addView(statusText);
@@ -137,7 +138,7 @@ public class OverlayService extends Service {
 
         targetLabel.setText("Target (seconds)");
         targetLabel.setTextColor(Color.WHITE);
-        targetLabel.setTextSize(10);
+        targetLabel.setTextSize(13);
         targetLabel.setGravity(Gravity.CENTER);
 
         overlay.addView(targetLabel);
@@ -147,63 +148,45 @@ public class OverlayService extends Service {
 
         targetInput.setText("1.650");
         targetInput.setTextColor(Color.WHITE);
-        targetInput.setTextSize(13);
+        targetInput.setTextSize(16);
         targetInput.setGravity(Gravity.CENTER);
         targetInput.setSingleLine(true);
 
         targetInput.setInputType(
-                InputType.TYPE_CLASS_NUMBER |
-                InputType.TYPE_NUMBER_FLAG_DECIMAL
+                android.text.InputType.TYPE_CLASS_NUMBER |
+                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
         );
 
-        LinearLayout.LayoutParams inputParams =
-                new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        38
-                );
-
-        overlay.addView(targetInput, inputParams);
+        overlay.addView(targetInput);
 
         // START BUTTON
         Button startButton = new Button(this);
 
         startButton.setText("START");
-        startButton.setTextSize(12);
 
-        LinearLayout.LayoutParams buttonParams =
-                new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        42
-                );
-
-        buttonParams.setMargins(0, 2, 0, 2);
-
-        overlay.addView(startButton, buttonParams);
+        overlay.addView(startButton);
 
         // HIT BUTTON
         Button hitButton = new Button(this);
 
         hitButton.setText("HIT");
-        hitButton.setTextSize(12);
         hitButton.setEnabled(false);
 
-        overlay.addView(hitButton, buttonParams);
+        overlay.addView(hitButton);
 
         // NEW SESSION BUTTON
         Button newSessionButton = new Button(this);
 
         newSessionButton.setText("NEW SESSION");
-        newSessionButton.setTextSize(12);
 
-        overlay.addView(newSessionButton, buttonParams);
+        overlay.addView(newSessionButton);
 
         // CLOSE BUTTON
         Button closeButton = new Button(this);
 
         closeButton.setText("CLOSE");
-        closeButton.setTextSize(12);
 
-        overlay.addView(closeButton, buttonParams);
+        overlay.addView(closeButton);
 
         // STATS
         statsText = new TextView(this);
@@ -213,32 +196,60 @@ public class OverlayService extends Service {
         );
 
         statsText.setTextColor(Color.WHITE);
-        statsText.setTextSize(11);
+        statsText.setTextSize(15);
         statsText.setGravity(Gravity.CENTER);
-        statsText.setPadding(0, 3, 0, 0);
+        statsText.setPadding(0, 8, 0, 0);
 
         overlay.addView(statsText);
 
         // WINDOW
+        //
+        // IMPORTANT:
+        // We removed FLAG_NOT_FOCUSABLE so the EditText
+        // can receive keyboard input.
+        //
+        // FLAG_NOT_TOUCH_MODAL allows touches outside the
+        // overlay to continue going to the game.
+        //
         WindowManager.LayoutParams params =
                 new WindowManager.LayoutParams(
-                        210,
+                        280,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                         PixelFormat.TRANSLUCENT
                 );
 
         params.gravity =
                 Gravity.TOP | Gravity.RIGHT;
 
-        params.x = 8;
-        params.y = 70;
+        params.x = 15;
+        params.y = 80;
 
         windowManager.addView(
                 overlay,
                 params
         );
+
+        // TARGET INPUT
+        targetInput.setOnClickListener(v -> {
+
+            targetInput.requestFocus();
+
+            InputMethodManager imm =
+                    (InputMethodManager)
+                            getSystemService(
+                                    Context.INPUT_METHOD_SERVICE
+                            );
+
+            if (imm != null) {
+
+                imm.showSoftInput(
+                        targetInput,
+                        InputMethodManager.SHOW_IMPLICIT
+                );
+            }
+        });
 
         // START
         startButton.setOnClickListener(v -> {
@@ -261,6 +272,20 @@ public class OverlayService extends Service {
             hitButton.setEnabled(true);
 
             targetInput.setEnabled(false);
+
+            InputMethodManager imm =
+                    (InputMethodManager)
+                            getSystemService(
+                                    Context.INPUT_METHOD_SERVICE
+                            );
+
+            if (imm != null) {
+
+                imm.hideSoftInputFromWindow(
+                        targetInput.getWindowToken(),
+                        0
+                );
+            }
 
             handler.removeCallbacks(timerRunnable);
             handler.post(timerRunnable);
@@ -383,7 +408,7 @@ public class OverlayService extends Service {
             statusText.setText(
                     String.format(
                             Locale.US,
-                            "🟢 PERFECT %.3f",
+                            "🟢 PERFECT  %.3f",
                             difference
                     )
             );
@@ -397,7 +422,7 @@ public class OverlayService extends Service {
             statusText.setText(
                     String.format(
                             Locale.US,
-                            "🔵 EARLY %.3f",
+                            "🔵 EARLY  %.3f",
                             Math.abs(difference)
                     )
             );
@@ -411,7 +436,7 @@ public class OverlayService extends Service {
             statusText.setText(
                     String.format(
                             Locale.US,
-                            "🔴 LATE %.3f",
+                            "🔴 LATE  %.3f",
                             difference
                     )
             );
@@ -560,4 +585,4 @@ public class OverlayService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-                }
+}
