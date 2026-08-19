@@ -11,6 +11,7 @@ import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Build;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.InputType;
