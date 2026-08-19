@@ -730,6 +730,7 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                     stopSelf();
                 }
         );
+    }
 
         // ========================================================
         // DRAG OVERLAY
