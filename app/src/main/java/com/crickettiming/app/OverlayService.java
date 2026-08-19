@@ -1,7 +1,6 @@
 package com.crickettiming.app;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -15,7 +14,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -170,6 +168,7 @@ public class OverlayService extends Service {
 
         targetInput.setText("1.650");
         targetInput.setTextColor(Color.WHITE);
+        targetInput.setHintTextColor(Color.GRAY);
         targetInput.setTextSize(16);
         targetInput.setGravity(Gravity.CENTER);
         targetInput.setSingleLine(true);
@@ -232,8 +231,8 @@ public class OverlayService extends Service {
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
 
                         // IMPORTANT:
-                        // This allows the EditText to receive focus
-                        // and lets the keyboard appear.
+                        // The old FLAG_NOT_FOCUSABLE prevented
+                        // the EditText from being typed into.
                         WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
 
                         PixelFormat.TRANSLUCENT
@@ -251,31 +250,6 @@ public class OverlayService extends Service {
         windowManager.addView(
                 overlay,
                 params
-        );
-
-        // TARGET INPUT FOCUS
-        targetInput.setOnFocusChangeListener(
-                (v, hasFocus) -> {
-
-                    if (hasFocus) {
-
-                        targetInput.selectAll();
-
-                        InputMethodManager imm =
-                                (InputMethodManager)
-                                        getSystemService(
-                                                Context.INPUT_METHOD_SERVICE
-                                        );
-
-                        if (imm != null) {
-
-                            imm.showSoftInput(
-                                    targetInput,
-                                    InputMethodManager.SHOW_IMPLICIT
-                            );
-                        }
-                    }
-                }
         );
 
         // START
@@ -765,4 +739,4 @@ public class OverlayService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-}
+                              }
