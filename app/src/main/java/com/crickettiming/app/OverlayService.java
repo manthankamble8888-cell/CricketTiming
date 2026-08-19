@@ -470,7 +470,8 @@ public class OverlayService extends Service {
                          * keyboard can appear and the target can
                          * actually be edited.
                          */
-                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
 
                         PixelFormat.TRANSLUCENT
                 );
