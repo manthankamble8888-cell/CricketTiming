@@ -785,8 +785,6 @@ public class OverlayService extends Service {
 
             double parsed =
                     Double.parseDouble(value);
-
-            if (parsed > 0.0 &&
                                     if (parsed > 0.0 &&
                             parsed < 20.0) {
 
