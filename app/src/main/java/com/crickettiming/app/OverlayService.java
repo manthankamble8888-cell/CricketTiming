@@ -735,12 +735,77 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
         // DRAG OVERLAY
         // ========================================================
 
-        makeDraggable(
-                title,
-                overlay,
-                params
-        );
-    }
+        private void makeDraggable(
+        View dragView,
+        View overlayView,
+        WindowManager.LayoutParams params
+) {
+
+    dragView.setOnTouchListener(
+            new View.OnTouchListener() {
+
+                private int initialX;
+                private int initialY;
+
+                private float initialTouchX;
+                private float initialTouchY;
+
+                @Override
+                public boolean onTouch(
+                        View v,
+                        MotionEvent event
+                ) {
+
+                    switch (event.getAction()) {
+
+                        case MotionEvent.ACTION_DOWN:
+
+                            initialX = params.x;
+                            initialY = params.y;
+
+                            initialTouchX = event.getRawX();
+                            initialTouchY = event.getRawY();
+
+                            return true;
+
+                        case MotionEvent.ACTION_MOVE:
+
+                            params.x =
+                                    initialX +
+                                    (int) (
+                                            initialTouchX -
+                                            event.getRawX()
+                                    );
+
+                            params.y =
+                                    initialY +
+                                    (int) (
+                                            event.getRawY() -
+                                            initialTouchY
+                                    );
+
+                            try {
+
+                                windowManager.updateViewLayout(
+                                        overlayView,
+                                        params
+                                );
+
+                            } catch (Exception ignored) {
+                            }
+
+                            return true;
+
+                        case MotionEvent.ACTION_UP:
+
+                            return true;
+                    }
+
+                    return false;
+                }
+            }
+    );
+        }
 
     // ============================================================
     // READ TARGET
