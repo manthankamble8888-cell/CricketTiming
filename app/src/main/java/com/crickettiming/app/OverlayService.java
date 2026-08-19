@@ -10,6 +10,7 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,12 +25,11 @@ public class OverlayService extends Service {
 
     private WindowManager windowManager;
     private View overlayView;
-    private WindowManager.LayoutParams params;
 
     private TextView timerText;
     private TextView statusText;
 
-    private final Handler handler = new Handler();
+    private Handler handler = new Handler();
 
     private long startTime = 0;
     private boolean running = false;
@@ -40,14 +40,15 @@ public class OverlayService extends Service {
 
             if (running) {
 
-                long elapsed = System.nanoTime() - startTime;
-                double seconds = elapsed / 1_000_000_000.0;
+                long elapsed = System.currentTimeMillis() - startTime;
+
+                double seconds = elapsed / 1000.0;
 
                 timerText.setText(
                         String.format(Locale.US, "%.3f s", seconds)
                 );
 
-                handler.postDelayed(this, 50);
+                handler.postDelayed(this, 30);
             }
         }
     };
@@ -57,36 +58,33 @@ public class OverlayService extends Service {
         super.onCreate();
 
         createNotificationChannel();
+        startForeground(1001, createNotification());
 
-        Notification notification =
-                new Notification.Builder(this, "cricket_timing")
-                        .setContentTitle("Cricket Timing")
-                        .setContentText("Floating timing overlay is running")
-                        .setSmallIcon(android.R.drawable.ic_media_play)
-                        .setOngoing(true)
-                        .build();
-
-        startForeground(1001, notification);
-
-        windowManager =
-                (WindowManager) getSystemService(WINDOW_SERVICE);
-
-        createOverlay();
+        showOverlay();
     }
 
-    private void createOverlay() {
+    private void showOverlay() {
 
+        if (!Settings.canDrawOverlays(this)) {
+            stopSelf();
+            return;
+        }
+
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+
+        /*
+         * Main overlay container
+         */
         LinearLayout box = new LinearLayout(this);
 
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setGravity(Gravity.CENTER);
-        box.setPadding(18, 12, 18, 12);
+        box.setPadding(18, 14, 18, 14);
 
-        box.setBackgroundColor(
-                Color.rgb(25, 35, 50)
-        );
+        box.setBackgroundColor(Color.rgb(20, 28, 45));
 
-        // Title
+        /*
+         * Title
+         */
         TextView title = new TextView(this);
 
         title.setText("🏏 Timing");
@@ -94,189 +92,223 @@ public class OverlayService extends Service {
         title.setTextSize(18);
         title.setGravity(Gravity.CENTER);
 
-        // Timer
+        /*
+         * Timer
+         */
         timerText = new TextView(this);
 
         timerText.setText("0.000 s");
         timerText.setTextColor(Color.WHITE);
-        timerText.setTextSize(22);
+        timerText.setTextSize(25);
         timerText.setGravity(Gravity.CENTER);
 
-        // Status
+        /*
+         * Status
+         */
         statusText = new TextView(this);
 
         statusText.setText("Ready");
         statusText.setTextColor(Color.LTGRAY);
-        statusText.setTextSize(14);
+        statusText.setTextSize(15);
         statusText.setGravity(Gravity.CENTER);
 
-        // START button
+        /*
+         * START button
+         */
         Button startButton = new Button(this);
 
         startButton.setText("START");
 
-        // HIT button
+        startButton.setOnClickListener(v -> startTimer());
+
+        /*
+         * HIT button
+         */
         Button hitButton = new Button(this);
 
         hitButton.setText("HIT");
 
-        // STOP button
-        Button stopButton = new Button(this);
+        hitButton.setOnClickListener(v -> hitTimer());
 
-        stopButton.setText("CLOSE");
+        /*
+         * CLOSE button
+         */
+        Button closeButton = new Button(this);
 
+        closeButton.setText("CLOSE");
+
+        closeButton.setOnClickListener(v -> stopSelf());
+
+        /*
+         * Add everything
+         */
         box.addView(title);
         box.addView(timerText);
         box.addView(statusText);
         box.addView(startButton);
         box.addView(hitButton);
-        box.addView(stopButton);
+        box.addView(closeButton);
 
         overlayView = box;
 
-        int overlayType;
+        /*
+         * Overlay position
+         */
+        WindowManager.LayoutParams params;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            overlayType =
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-        } else {
-            overlayType =
-                    WindowManager.LayoutParams.TYPE_PHONE;
-        }
 
-        params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                overlayType,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT
-        );
-
-        params.gravity =
-                Gravity.TOP | Gravity.START;
-
-        params.x = 30;
-        params.y = 180;
-
-        windowManager.addView(
-                overlayView,
-                params
-        );
-
-        // START
-        startButton.setOnClickListener(v -> {
-
-            startTime = System.nanoTime();
-
-            running = true;
-
-            statusText.setText("Timing...");
-
-            timerText.setText("0.000 s");
-
-            handler.removeCallbacks(timerRunnable);
-
-            handler.post(timerRunnable);
-        });
-
-        // HIT
-        hitButton.setOnClickListener(v -> {
-
-            if (!running) {
-                return;
-            }
-
-            long elapsed =
-                    System.nanoTime() - startTime;
-
-            double seconds =
-                    elapsed / 1_000_000_000.0;
-
-            running = false;
-
-            handler.removeCallbacks(timerRunnable);
-
-            timerText.setText(
-                    String.format(
-                            Locale.US,
-                            "%.3f s",
-                            seconds
-                    )
+            params = new WindowManager.LayoutParams(
+                    250,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                    PixelFormat.TRANSLUCENT
             );
 
-            statusText.setText("HIT recorded");
-        });
+        } else {
 
-        // CLOSE
-        stopButton.setOnClickListener(v -> {
+            params = new WindowManager.LayoutParams(
+                    250,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.TYPE_PHONE,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                    PixelFormat.TRANSLUCENT
+            );
+        }
 
-            stopSelf();
-        });
+        params.gravity = Gravity.TOP | Gravity.RIGHT;
 
-        // Drag the overlay
-        box.setOnTouchListener(
-                new View.OnTouchListener() {
+        params.x = 20;
+        params.y = 120;
 
-                    private int initialX;
-                    private int initialY;
+        windowManager.addView(overlayView, params);
 
-                    private float initialTouchX;
-                    private float initialTouchY;
+        /*
+         * Make the title draggable.
+         */
+        title.setOnTouchListener(new View.OnTouchListener() {
 
-                    @Override
-                    public boolean onTouch(
-                            View v,
-                            MotionEvent event) {
+            private int initialX;
+            private int initialY;
 
-                        switch (event.getAction()) {
+            private float initialTouchX;
+            private float initialTouchY;
 
-                            case MotionEvent.ACTION_DOWN:
+            @Override
+            public boolean onTouch(
+                    View v,
+                    MotionEvent event
+            ) {
 
-                                initialX = params.x;
-                                initialY = params.y;
+                switch (event.getAction()) {
 
-                                initialTouchX =
-                                        event.getRawX();
+                    case MotionEvent.ACTION_DOWN:
 
-                                initialTouchY =
-                                        event.getRawY();
+                        initialX = params.x;
+                        initialY = params.y;
 
-                                return true;
+                        initialTouchX = event.getRawX();
+                        initialTouchY = event.getRawY();
 
-                            case MotionEvent.ACTION_MOVE:
+                        return true;
 
-                                params.x =
-                                        initialX +
-                                                (int) (
-                                                        event.getRawX()
-                                                                - initialTouchX
-                                                );
+                    case MotionEvent.ACTION_MOVE:
 
-                                params.y =
-                                        initialY +
-                                                (int) (
-                                                        event.getRawY()
-                                                                - initialTouchY
-                                                );
+                        params.x =
+                                initialX +
+                                (int) (initialTouchX - event.getRawX());
 
-                                windowManager.updateViewLayout(
-                                        overlayView,
-                                        params
-                                );
+                        params.y =
+                                initialY +
+                                (int) (event.getRawY() - initialTouchY);
 
-                                return true;
-                        }
+                        windowManager.updateViewLayout(
+                                overlayView,
+                                params
+                        );
 
-                        return false;
-                    }
+                        return true;
                 }
+
+                return false;
+            }
+        });
+    }
+
+    private void startTimer() {
+
+        if (running) {
+            return;
+        }
+
+        startTime = System.currentTimeMillis();
+
+        running = true;
+
+        statusText.setText("Timing...");
+
+        handler.post(timerRunnable);
+    }
+
+    private void hitTimer() {
+
+        if (!running) {
+            return;
+        }
+
+        long elapsed =
+                System.currentTimeMillis() - startTime;
+
+        double seconds =
+                elapsed / 1000.0;
+
+        running = false;
+
+        handler.removeCallbacks(timerRunnable);
+
+        timerText.setText(
+                String.format(
+                        Locale.US,
+                        "%.3f s",
+                        seconds
+                )
         );
+
+        statusText.setText("HIT!");
+    }
+
+    private Notification createNotification() {
+
+        String channelId = "cricket_timing";
+
+        Notification.Builder builder;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            builder =
+                    new Notification.Builder(
+                            this,
+                            channelId
+                    );
+
+        } else {
+
+            builder =
+                    new Notification.Builder(this);
+        }
+
+        return builder
+                .setContentTitle("Cricket Timing")
+                .setContentText("Floating timing overlay is active")
+                .setSmallIcon(android.R.drawable.ic_media_play)
+                .setOngoing(true)
+                .build();
     }
 
     private void createNotificationChannel() {
 
-        if (Build.VERSION.SDK_INT >=
-                Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             NotificationChannel channel =
                     new NotificationChannel(
@@ -285,19 +317,13 @@ public class OverlayService extends Service {
                             NotificationManager.IMPORTANCE_LOW
                     );
 
-            channel.setDescription(
-                    "Keeps the Cricket Timing floating overlay running"
-            );
-
             NotificationManager manager =
                     getSystemService(
                             NotificationManager.class
                     );
 
             if (manager != null) {
-                manager.createNotificationChannel(
-                        channel
-                );
+                manager.createNotificationChannel(channel);
             }
         }
     }
@@ -307,17 +333,12 @@ public class OverlayService extends Service {
 
         running = false;
 
-        handler.removeCallbacks(
-                timerRunnable
-        );
+        handler.removeCallbacks(timerRunnable);
 
-        if (overlayView != null &&
-                windowManager != null) {
+        if (overlayView != null && windowManager != null) {
 
             try {
-                windowManager.removeView(
-                        overlayView
-                );
+                windowManager.removeView(overlayView);
             } catch (Exception ignored) {
             }
         }
