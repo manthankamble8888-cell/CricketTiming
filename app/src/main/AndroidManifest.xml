@@ -2,18 +2,20 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Allows the floating window to appear over other apps -->
+    <!-- Floating overlay permission -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!-- Allows the timing service to continue running -->
+    <!-- Foreground service permission -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- Required for specialUse foreground service on newer Android -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
         android:allowBackup="true"
         android:label="Cricket Timing"
         android:theme="@style/AppTheme">
 
-        <!-- Main screen -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -25,11 +27,16 @@
 
         </activity>
 
-        <!-- Floating timing overlay -->
         <service
             android:name=".OverlayService"
             android:exported="false"
-            android:foregroundServiceType="specialUse" />
+            android:foregroundServiceType="specialUse">
+
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="cricket timing floating overlay" />
+
+        </service>
 
     </application>
 
