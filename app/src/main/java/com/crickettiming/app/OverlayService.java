@@ -1,6 +1,8 @@
 package com.crickettiming.app;
-
 import android.app.Service;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -87,23 +89,46 @@ public class OverlayService extends Service {
     };
 
     @Override
-    public void onCreate() {
+public void onCreate() {
+    super.onCreate();
 
-        super.onCreate();
+    // Create notification channel
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        NotificationChannel channel = new NotificationChannel(
+                "cricket_timing",
+                "Cricket Timing",
+                NotificationManager.IMPORTANCE_LOW
+        );
 
-        if (!Settings.canDrawOverlays(this)) {
-            stopSelf();
-            return;
-        }
+        NotificationManager manager =
+                getSystemService(NotificationManager.class);
 
-        windowManager =
-                (WindowManager)
-                        getSystemService(
-                                WINDOW_SERVICE
-                        );
-
-        createOverlay();
+        manager.createNotificationChannel(channel);
     }
+
+    // Start foreground IMMEDIATELY
+    Notification notification =
+            new Notification.Builder(this, "cricket_timing")
+                    .setContentTitle("Cricket Timing")
+                    .setContentText("Timing overlay is running")
+                    .setSmallIcon(android.R.drawable.ic_menu_info_details)
+                    .build();
+
+    startForeground(1, notification);
+
+    // Check overlay permission
+    if (!Settings.canDrawOverlays(this)) {
+        stopSelf();
+        return;
+    }
+
+    // Get WindowManager
+    windowManager =
+            (WindowManager) getSystemService(WINDOW_SERVICE);
+
+    // Create the floating overlay
+    createOverlay();
+}
 
     private void createOverlay() {
 
