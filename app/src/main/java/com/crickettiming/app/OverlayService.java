@@ -541,7 +541,7 @@ overlay.setScaleY(0.8f);
                 overlay,
                 params
         );
-        makeDraggable(title, overlay, params);
+        makeDraggable(topBar, overlay, params);
 
         // ========================================================
         // TARGET INPUT CLICK
