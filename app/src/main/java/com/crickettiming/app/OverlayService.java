@@ -510,7 +510,7 @@ minimizeButton.setOnClickListener(v -> {
 
         WindowManager.LayoutParams params =
                 new WindowManager.LayoutParams(
-                        100,
+                        250,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
 
@@ -531,7 +531,7 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 Gravity.TOP | Gravity.RIGHT;
 
         params.x = 15;
-        params.y = 80;
+        params.y = 70;
 
         windowManager.addView(
                 overlay,
