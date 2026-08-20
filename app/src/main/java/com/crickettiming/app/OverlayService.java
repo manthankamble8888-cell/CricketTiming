@@ -372,8 +372,15 @@ public class OverlayService extends Service {
         );
 
         targetInput.setTextSize(
-                10
+                14
         );
+        targetInput.setTextColor(
+        Color.WHITE
+);
+
+targetInput.setCursorVisible(
+        true
+);
 
         targetInput.setGravity(
                 Gravity.CENTER
@@ -411,7 +418,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams inputParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        30
+                        38
                 );
 
         inputParams.setMargins(
@@ -544,47 +551,7 @@ public class OverlayService extends Service {
                 minimizeButton
         );
 
-        // ========================================================
-        // STATS
-        // ========================================================
-
-        statsText =
-                new TextView(this);
-
-        statsText.setText(
-                "Shots: 0\nBest: --\nAverage: --"
-        );
-
-        statsText.setTextColor(
-                Color.WHITE
-        );
-
-        statsText.setTextSize(
-                13
-        );
-
-        statsText.setGravity(
-                Gravity.CENTER
-        );
-
-        statsText.setPadding(
-                0,
-                5,
-                0,
-                0
-        );
-
-        LinearLayout.LayoutParams statsParams =
-                new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        55
-                );
-
-        overlay.addView(
-                statsText,
-                statsParams
-        );
-
+    
         // ========================================================
         // WINDOW
         // ========================================================
