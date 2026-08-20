@@ -531,7 +531,7 @@ minimizeButton.setOnClickListener(v -> {
 
         WindowManager.LayoutParams params =
                 new WindowManager.LayoutParams(
-                        220,
+                        200,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
 
