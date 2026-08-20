@@ -946,29 +946,32 @@ public class OverlayService extends Service {
     // ============================================================
     // SMALL BUTTON SIZE
     // ============================================================
+private void setSmallButtonHeight(
+        Button button
+) {
 
-    private void setSmallButtonHeight(
-            Button button
-    ) {
+    button.setMinHeight(0);
+    button.setMinimumHeight(0);
 
-        button.setMinHeight(0);
-        button.setMinimumHeight(0);
+    button.setPadding(
+            5,
+            0,
+            5,
+            0
+    );
 
-        button.setPadding(
-                5,
-                0,
-                5,
-                0
-        );
+    button.setTextSize(11);
 
-        button.setLayoutParams(
-                new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-        );
-    }
+    button.setSingleLine(true);
 
+    button.setLayoutParams(
+            new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+    );
+}
+    
     // ============================================================
     // DRAG OVERLAY
     // ============================================================
