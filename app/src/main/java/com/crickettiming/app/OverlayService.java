@@ -207,7 +207,7 @@ public class OverlayService extends Service {
         );
 
         title.setTextSize(
-                18
+                16
         );
 
         title.setGravity(
@@ -217,7 +217,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams titleParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        42
+                        34
                 );
 
         overlay.addView(
@@ -241,7 +241,7 @@ public class OverlayService extends Service {
         );
 
         timerText.setTextSize(
-                24
+                20
         );
 
         timerText.setGravity(
@@ -251,7 +251,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams timerParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        45
+                        36
                 );
 
         overlay.addView(
@@ -372,7 +372,7 @@ public class OverlayService extends Service {
         );
 
         targetInput.setTextSize(
-                16
+                14
         );
 
         targetInput.setGravity(
@@ -411,7 +411,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams inputParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        42
+                        36
                 );
 
         inputParams.setMargins(
