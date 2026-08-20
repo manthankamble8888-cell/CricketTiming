@@ -1,20 +1,3 @@
-<LinearLayout
-    android:id="@+id/topBar"
-    android:layout_width="match_parent"
-    android:layout_height="40dp"
-    android:orientation="horizontal">
-
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1" />
-
-    <ImageView
-        android:id="@+id/closeButton"
-        android:layout_width="24dp"
-        android:layout_height="24dp" />
-</LinearLayout>
 
 package com.crickettiming.app;
 import android.app.Service;
@@ -559,7 +542,8 @@ overlay.setScaleY(0.8f);
                 overlay,
                 params
         );
-        makeDraggable(title, overlay, params);
+        makeDraggable(topBar, overlay, params);
+
 
         // ========================================================
         // TARGET INPUT CLICK
