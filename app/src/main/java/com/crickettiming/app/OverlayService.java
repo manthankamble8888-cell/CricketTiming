@@ -445,7 +445,32 @@ public void onCreate() {
                 closeButton
         );
 
-        // ========================================================
+// =================================================
+// MINIMIZE
+// =================================================
+
+Button minimizeButton = new Button(this);
+
+minimizeButton.setText("MINIMIZE");
+
+overlay.addView(
+    minimizeButton
+);
+
+minimizeButton.setOnClickListener(v -> {
+
+    for (int i = 0; i < overlay.getChildCount(); i++) {
+        View child = overlay.getChildAt(i);
+
+        if (child != minimizeButton) {
+            child.setVisibility(View.GONE);
+        }
+    }
+
+    minimizeButton.setText("🏏");
+});
+
+       // ========================================================
         // STATS
         // ========================================================
 
