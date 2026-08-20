@@ -207,7 +207,7 @@ public class OverlayService extends Service {
         );
 
         title.setTextSize(
-                16
+                12
         );
 
         title.setGravity(
@@ -217,7 +217,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams titleParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        34
+                        28
                 );
 
         overlay.addView(
@@ -241,7 +241,7 @@ public class OverlayService extends Service {
         );
 
         timerText.setTextSize(
-                20
+                16
         );
 
         timerText.setGravity(
@@ -251,7 +251,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams timerParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        36
+                        30
                 );
 
         overlay.addView(
@@ -334,7 +334,7 @@ public class OverlayService extends Service {
         );
 
         targetLabel.setTextSize(
-                12
+                10
         );
 
         targetLabel.setGravity(
@@ -344,7 +344,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams labelParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        28
+                        22
                 );
 
         overlay.addView(
@@ -372,7 +372,7 @@ public class OverlayService extends Service {
         );
 
         targetInput.setTextSize(
-                14
+                10
         );
 
         targetInput.setGravity(
@@ -411,7 +411,7 @@ public class OverlayService extends Service {
         LinearLayout.LayoutParams inputParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        36
+                        30
                 );
 
         inputParams.setMargins(
