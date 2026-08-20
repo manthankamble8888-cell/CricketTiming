@@ -40,6 +40,7 @@ public class OverlayService extends Service {
     private TextView statsText;
     private EditText targetInput;
     private TimingBar timingBar;
+    private boolean minimized = false;
 
     private WindowManager.LayoutParams windowParams;
 
@@ -917,30 +918,55 @@ public class OverlayService extends Service {
         // ========================================================
 
         minimizeButton.setOnClickListener(
-                v -> {
+        v -> {
 
-                    for (
-                            int i = 0;
-                            i < overlay.getChildCount();
-                            i++
-                    ) {
+            minimized = !minimized;
 
-                        View child =
-                                overlay.getChildAt(i);
+            for (
+                    int i = 0;
+                    i < overlay.getChildCount();
+                    i++
+            ) {
 
-                        if (child != minimizeButton) {
+                View child =
+                        overlay.getChildAt(i);
 
-                            child.setVisibility(
-                                    View.GONE
-                            );
-                        }
-                    }
+                if (child != minimizeButton) {
 
-                    minimizeButton.setText(
-                            "🏏"
+                    child.setVisibility(
+                            minimized
+                                    ? View.GONE
+                                    : View.VISIBLE
                     );
                 }
-        );
+            }
+
+            minimizeButton.setText(
+                    minimized
+                            ? "🏏"
+                            : "MINIMIZE"
+            );
+
+            /*
+             * Safety net: if the target input was focused when we
+             * minimized, make sure we hand focus back so the overlay
+             * doesn't stay focusable and block touches elsewhere.
+             */
+
+            windowParams.flags |=
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+
+            try {
+
+                windowManager.updateViewLayout(
+                        overlay,
+                        windowParams
+                );
+
+            } catch (Exception ignored) {
+            }
+        }
+);
     }
 
     // ============================================================
