@@ -205,7 +205,7 @@ topBar.addView(
                 FrameLayout.LayoutParams.MATCH_PARENT
         )
 );
-        
+      title.setPadding(20, 10, 20, 10);  
 
         // ========================================================
         // TIMER
@@ -554,15 +554,15 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
         params.x = 15;
         params.y = 70;
         
-        overlay.setScaleX(0.8f);
-overlay.setScaleY(0.8f);
+        overlay.setScaleX(0.7f);
+overlay.setScaleY(0.7f);
         
 
         windowManager.addView(
                 overlay,
                 params
         );
-        makeDraggable(topBar, overlay, params);
+        makeDraggable(title, overlay, params);
 
         // ========================================================
         // TARGET INPUT CLICK
