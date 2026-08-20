@@ -214,16 +214,18 @@ public class OverlayService extends Service {
                 Gravity.CENTER
         );
 
-        LinearLayout.LayoutParams titleParams =
-                new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        28
-                );
+        title.setPadding(0, 6, 0, 4);
 
-        overlay.addView(
-                title,
-                titleParams
+LinearLayout.LayoutParams titleParams =
+        new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
         );
+
+overlay.addView(
+        title,
+        titleParams
+);
 
         // ========================================================
         // TIMER
@@ -248,16 +250,18 @@ public class OverlayService extends Service {
                 Gravity.CENTER
         );
 
-        LinearLayout.LayoutParams timerParams =
-                new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        30
-                );
+        timerText.setPadding(0, 4, 0, 6);
 
-        overlay.addView(
-                timerText,
-                timerParams
+LinearLayout.LayoutParams timerParams =
+        new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
         );
+
+overlay.addView(
+        timerText,
+        timerParams
+);
 
         // ========================================================
         // TIMING BAR
