@@ -1,4 +1,5 @@
 package com.crickettiming.app;
+import android.widget.FrameLayout;
 import android.app.Service;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -159,32 +160,52 @@ public void onCreate() {
                 )
         );
 
+
+
         // ========================================================
-        // TITLE
-        // ========================================================
+// TITLE / DRAG AREA
+// ========================================================
 
-        TextView title =
-                new TextView(this);
+FrameLayout topBar = new FrameLayout(this);
 
-        title.setText(
-                "🏏 Timing"
+LinearLayout.LayoutParams topBarParams =
+        new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                55
         );
 
-        title.setTextColor(
-                Color.WHITE
-        );
+overlay.addView(
+        topBar,
+        topBarParams
+);
 
-        title.setTextSize(
-                20
-        );
+TextView title =
+        new TextView(this);
 
-        title.setGravity(
-                Gravity.CENTER
-        );
+title.setText(
+        "🏏 Timing"
+);
 
-        overlay.addView(
-                title
-        );
+title.setTextColor(
+        Color.WHITE
+);
+
+title.setTextSize(
+        20
+);
+
+title.setGravity(
+        Gravity.CENTER
+);
+
+topBar.addView(
+        title,
+        new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        )
+);
+        
 
         // ========================================================
         // TIMER
@@ -541,7 +562,7 @@ overlay.setScaleY(0.8f);
                 overlay,
                 params
         );
-        makeDraggable(title, overlay, params);
+        makeDraggable(topBar, overlay, params);
 
         // ========================================================
         // TARGET INPUT CLICK
