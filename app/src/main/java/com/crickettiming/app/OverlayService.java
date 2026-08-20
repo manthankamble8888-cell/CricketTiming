@@ -532,6 +532,10 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
 
         params.x = 15;
         params.y = 70;
+        
+        overlay.setScaleX(0.8f);
+overlay.setScaleY(0.8f);
+        
 
         windowManager.addView(
                 overlay,
