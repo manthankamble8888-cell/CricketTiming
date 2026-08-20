@@ -1,4 +1,3 @@
-
 package com.crickettiming.app;
 import android.app.Service;
 import android.app.Notification;
@@ -794,7 +793,8 @@ overlay.setScaleY(0.8f);
         // DRAG OVERLAY
         // ========================================================
 
-        private void makeDraggable(topBar, overlay, params);
+        private void makeDraggable(
+        View dragView,
         View overlayView,
         WindowManager.LayoutParams params
 ) {
