@@ -1,5 +1,5 @@
 package com.crickettiming.app;
-import android.widget.FrameLayout;
+
 import android.app.Service;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -40,6 +40,8 @@ public class OverlayService extends Service {
     private TextView statsText;
     private EditText targetInput;
     private TimingBar timingBar;
+
+    private WindowManager.LayoutParams windowParams;
 
     private final Handler handler =
             new Handler(Looper.getMainLooper());
@@ -91,48 +93,77 @@ public class OverlayService extends Service {
     };
 
     @Override
-public void onCreate() {
-    super.onCreate();
+    public void onCreate() {
+        super.onCreate();
 
-    // Create notification channel
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        NotificationChannel channel = new NotificationChannel(
-                "cricket_timing",
-                "Cricket Timing",
-                NotificationManager.IMPORTANCE_LOW
+        // ========================================================
+        // NOTIFICATION
+        // ========================================================
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            NotificationChannel channel =
+                    new NotificationChannel(
+                            "cricket_timing",
+                            "Cricket Timing",
+                            NotificationManager.IMPORTANCE_LOW
+                    );
+
+            NotificationManager manager =
+                    getSystemService(
+                            NotificationManager.class
+                    );
+
+            manager.createNotificationChannel(
+                    channel
+            );
+        }
+
+        Notification notification =
+                new Notification.Builder(
+                        this,
+                        "cricket_timing"
+                )
+                        .setContentTitle(
+                                "Cricket Timing"
+                        )
+                        .setContentText(
+                                "Timing overlay is running"
+                        )
+                        .setSmallIcon(
+                                android.R.drawable
+                                        .ic_menu_info_details
+                        )
+                        .build();
+
+        startForeground(
+                1,
+                notification
         );
 
-        NotificationManager manager =
-                getSystemService(NotificationManager.class);
+        // ========================================================
+        // OVERLAY PERMISSION
+        // ========================================================
 
-        manager.createNotificationChannel(channel);
+        if (!Settings.canDrawOverlays(this)) {
+            stopSelf();
+            return;
+        }
+
+        windowManager =
+                (WindowManager)
+                        getSystemService(
+                                WINDOW_SERVICE
+                        );
+
+        createOverlay();
     }
-
-    // Start foreground IMMEDIATELY
-    Notification notification =
-            new Notification.Builder(this, "cricket_timing")
-                    .setContentTitle("Cricket Timing")
-                    .setContentText("Timing overlay is running")
-                    .setSmallIcon(android.R.drawable.ic_menu_info_details)
-                    .build();
-
-    startForeground(1, notification);
-
-    // Check overlay permission
-    if (!Settings.canDrawOverlays(this)) {
-        stopSelf();
-        return;
-    }
-
-    // Get WindowManager
-    windowManager =
-            (WindowManager) getSystemService(WINDOW_SERVICE);
-
-    // Create the floating overlay
-    createOverlay();
-}
 
     private void createOverlay() {
+
+        // ========================================================
+        // MAIN OVERLAY
+        // ========================================================
 
         overlay =
                 new LinearLayout(this);
@@ -146,10 +177,10 @@ public void onCreate() {
         );
 
         overlay.setPadding(
-                18,
-                14,
-                18,
-                14
+                10,
+                8,
+                10,
+                8
         );
 
         overlay.setBackgroundColor(
@@ -160,52 +191,39 @@ public void onCreate() {
                 )
         );
 
-
-
         // ========================================================
-// TITLE / DRAG AREA
-// ========================================================
+        // TITLE / DRAG HANDLE
+        // ========================================================
 
-FrameLayout topBar = new FrameLayout(this);
+        TextView title =
+                new TextView(this);
 
-LinearLayout.LayoutParams topBarParams =
-        new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                55
+        title.setText(
+                "🏏 Timing"
         );
 
-overlay.addView(
-        topBar,
-        topBarParams
-);
+        title.setTextColor(
+                Color.WHITE
+        );
 
-TextView title =
-        new TextView(this);
+        title.setTextSize(
+                18
+        );
 
-title.setText(
-        "🏏 Timing"
-);
+        title.setGravity(
+                Gravity.CENTER
+        );
 
-title.setTextColor(
-        Color.WHITE
-);
+        LinearLayout.LayoutParams titleParams =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        42
+                );
 
-title.setTextSize(
-        20
-);
-
-title.setGravity(
-        Gravity.CENTER
-);
-
-topBar.addView(
-        title,
-        new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-        )
-);
-      title.setPadding(20, 10, 20, 10);  
+        overlay.addView(
+                title,
+                titleParams
+        );
 
         // ========================================================
         // TIMER
@@ -223,15 +241,22 @@ topBar.addView(
         );
 
         timerText.setTextSize(
-                28
+                24
         );
 
         timerText.setGravity(
                 Gravity.CENTER
         );
 
+        LinearLayout.LayoutParams timerParams =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        45
+                );
+
         overlay.addView(
-                timerText
+                timerText,
+                timerParams
         );
 
         // ========================================================
@@ -244,14 +269,14 @@ topBar.addView(
         LinearLayout.LayoutParams barParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        45
+                        38
                 );
 
         barParams.setMargins(
                 0,
-                4,
+                2,
                 0,
-                6
+                4
         );
 
         overlay.addView(
@@ -275,15 +300,22 @@ topBar.addView(
         );
 
         statusText.setTextSize(
-                15
+                13
         );
 
         statusText.setGravity(
                 Gravity.CENTER
         );
 
+        LinearLayout.LayoutParams statusParams =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        32
+                );
+
         overlay.addView(
-                statusText
+                statusText,
+                statusParams
         );
 
         // ========================================================
@@ -302,15 +334,22 @@ topBar.addView(
         );
 
         targetLabel.setTextSize(
-                13
+                12
         );
 
         targetLabel.setGravity(
                 Gravity.CENTER
         );
 
+        LinearLayout.LayoutParams labelParams =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        28
+                );
+
         overlay.addView(
-                targetLabel
+                targetLabel,
+                labelParams
         );
 
         // ========================================================
@@ -333,7 +372,7 @@ topBar.addView(
         );
 
         targetInput.setTextSize(
-                18
+                16
         );
 
         targetInput.setGravity(
@@ -372,14 +411,14 @@ topBar.addView(
         LinearLayout.LayoutParams inputParams =
                 new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
+                        42
                 );
 
         inputParams.setMargins(
-                20,
-                2,
-                20,
-                5
+                10,
+                0,
+                10,
+                3
         );
 
         overlay.addView(
@@ -388,7 +427,7 @@ topBar.addView(
         );
 
         // ========================================================
-        // APPLY TARGET BUTTON
+        // APPLY TARGET
         // ========================================================
 
         Button applyButton =
@@ -396,6 +435,10 @@ topBar.addView(
 
         applyButton.setText(
                 "APPLY TARGET"
+        );
+
+        setSmallButtonHeight(
+                applyButton
         );
 
         overlay.addView(
@@ -411,6 +454,10 @@ topBar.addView(
 
         startButton.setText(
                 "START"
+        );
+
+        setSmallButtonHeight(
+                startButton
         );
 
         overlay.addView(
@@ -432,6 +479,10 @@ topBar.addView(
                 false
         );
 
+        setSmallButtonHeight(
+                hitButton
+        );
+
         overlay.addView(
                 hitButton
         );
@@ -445,6 +496,10 @@ topBar.addView(
 
         newSessionButton.setText(
                 "NEW SESSION"
+        );
+
+        setSmallButtonHeight(
+                newSessionButton
         );
 
         overlay.addView(
@@ -462,36 +517,34 @@ topBar.addView(
                 "CLOSE"
         );
 
+        setSmallButtonHeight(
+                closeButton
+        );
+
         overlay.addView(
                 closeButton
         );
 
-// =================================================
-// MINIMIZE
-// =================================================
+        // ========================================================
+        // MINIMIZE
+        // ========================================================
 
-Button minimizeButton = new Button(this);
+        Button minimizeButton =
+                new Button(this);
 
-minimizeButton.setText("MINIMIZE");
+        minimizeButton.setText(
+                "MINIMIZE"
+        );
 
-overlay.addView(
-    minimizeButton
-);
+        setSmallButtonHeight(
+                minimizeButton
+        );
 
-minimizeButton.setOnClickListener(v -> {
+        overlay.addView(
+                minimizeButton
+        );
 
-    for (int i = 0; i < overlay.getChildCount(); i++) {
-        View child = overlay.getChildAt(i);
-
-        if (child != minimizeButton) {
-            child.setVisibility(View.GONE);
-        }
-    }
-
-    minimizeButton.setText("🏏");
-});
-
-       // ========================================================
+        // ========================================================
         // STATS
         // ========================================================
 
@@ -507,7 +560,7 @@ minimizeButton.setOnClickListener(v -> {
         );
 
         statsText.setTextSize(
-                15
+                13
         );
 
         statsText.setGravity(
@@ -516,56 +569,95 @@ minimizeButton.setOnClickListener(v -> {
 
         statsText.setPadding(
                 0,
-                8,
+                5,
                 0,
                 0
         );
 
+        LinearLayout.LayoutParams statsParams =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        55
+                );
+
         overlay.addView(
-                statsText
+                statsText,
+                statsParams
         );
 
         // ========================================================
         // WINDOW
         // ========================================================
 
-        WindowManager.LayoutParams params =
+        windowParams =
                 new WindowManager.LayoutParams(
                         200,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
 
                         /*
-                         * IMPORTANT:
-                         * Do NOT use FLAG_NOT_FOCUSABLE here.
-                         * The EditText needs window focus so the
-                         * keyboard can appear and the target can
-                         * actually be edited.
+                         * NOT_FOCUSABLE means:
+                         *
+                         * - Other apps can receive keyboard/touch
+                         * - The overlay does not steal normal focus
+                         * - We temporarily remove this flag when
+                         *   the Target input needs the keyboard
                          */
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
                         WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
 
                         PixelFormat.TRANSLUCENT
                 );
 
-        params.gravity =
+        windowParams.gravity =
                 Gravity.TOP | Gravity.RIGHT;
 
-        params.x = 15;
-        params.y = 70;
-    
+        windowParams.x = 15;
+        windowParams.y = 70;
+
+        // IMPORTANT:
+        // Do NOT use setScaleX or setScaleY.
+
         windowManager.addView(
                 overlay,
-                params
+                windowParams
         );
-        makeDraggable(topBar, overlay, params);
 
         // ========================================================
-        // TARGET INPUT CLICK
+        // DRAG
+        // ========================================================
+
+        makeDraggable(
+                title,
+                overlay,
+                windowParams
+        );
+
+        // ========================================================
+        // TARGET INPUT
         // ========================================================
 
         targetInput.setOnClickListener(
                 v -> {
+
+                    /*
+                     * Temporarily allow this overlay window
+                     * to receive focus so the keyboard can appear.
+                     */
+
+                    windowParams.flags &=
+                            ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+
+                    try {
+
+                        windowManager.updateViewLayout(
+                                overlay,
+                                windowParams
+                        );
+
+                    } catch (Exception ignored) {
+                    }
 
                     targetInput.requestFocus();
 
@@ -610,6 +702,23 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                                 targetInput.getWindowToken(),
                                 0
                         );
+                    }
+
+                    /*
+                     * Give focus back to other apps.
+                     */
+
+                    windowParams.flags |=
+                            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+
+                    try {
+
+                        windowManager.updateViewLayout(
+                                overlay,
+                                windowParams
+                        );
+
+                    } catch (Exception ignored) {
                     }
                 }
         );
@@ -669,7 +778,7 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
 
                     handler.post(
                             timerRunnable
-                    );
+     );
                 }
         );
 
@@ -785,7 +894,7 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
 
                     updateStats();
                 }
-        );
+  );
 
         // ========================================================
         // CLOSE
@@ -803,85 +912,151 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                     stopSelf();
                 }
         );
-    }
 
         // ========================================================
-        // DRAG OVERLAY
+        // MINIMIZE
         // ========================================================
 
-        private void makeDraggable(
-        View dragView,
-        View overlayView,
-        WindowManager.LayoutParams params
-) {
+        minimizeButton.setOnClickListener(
+                v -> {
 
-    dragView.setOnTouchListener(
-            new View.OnTouchListener() {
+                    for (
+                            int i = 0;
+                            i < overlay.getChildCount();
+                            i++
+                    ) {
 
-                private int initialX;
-                private int initialY;
+                        View child =
+                                overlay.getChildAt(i);
 
-                private float initialTouchX;
-                private float initialTouchY;
+                        if (child != minimizeButton) {
 
-                @Override
-                public boolean onTouch(
-                        View v,
-                        MotionEvent event
-                ) {
-
-                    switch (event.getAction()) {
-
-                        case MotionEvent.ACTION_DOWN:
-
-                            initialX = params.x;
-                            initialY = params.y;
-
-                            initialTouchX = event.getRawX();
-                            initialTouchY = event.getRawY();
-
-                            return true;
-
-                        case MotionEvent.ACTION_MOVE:
-
-                            params.x =
-                                    initialX +
-                                    (int) (
-                                            initialTouchX -
-                                            event.getRawX()
-                                    );
-
-                            params.y =
-                                    initialY +
-                                    (int) (
-                                            event.getRawY() -
-                                            initialTouchY
-                                    );
-
-                            try {
-
-                                windowManager.updateViewLayout(
-                                        overlayView,
-                                        params
-                                );
-
-                            } catch (Exception ignored) {
-                            }
-
-                            return true;
-
-                        case MotionEvent.ACTION_UP:
-
-                            return true;
+                            child.setVisibility(
+                                    View.GONE
+                            );
+                        }
                     }
 
-                    return false;
+                    minimizeButton.setText(
+                            "🏏"
+                    );
                 }
-            }
-    );
-        }
+        );
+    }
 
     // ============================================================
+    // SMALL BUTTON SIZE
+    // ============================================================
+
+    private void setSmallButtonHeight(
+            Button button
+    ) {
+
+        button.setMinHeight(0);
+        button.setMinimumHeight(0);
+
+        button.setPadding(
+                5,
+                0,
+                5,
+                0
+        );
+
+        button.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        42
+                )
+        );
+    }
+
+    // ============================================================
+    // DRAG OVERLAY
+    // ============================================================
+
+    private void makeDraggable(
+            View dragView,
+            View overlayView,
+            WindowManager.LayoutParams params
+    ) {
+
+        dragView.setOnTouchListener(
+                new View.OnTouchListener() {
+
+                    private int initialX;
+                    private int initialY;
+
+                    private float initialTouchX;
+                    private float initialTouchY;
+
+                    @Override
+                    public boolean onTouch(
+                            View v,
+                            MotionEvent event
+                    ) {
+
+                        switch (
+                                event.getAction()
+                        ) {
+
+                            case MotionEvent.ACTION_DOWN:
+
+                                initialX =
+                                        params.x;
+
+                                initialY =
+                                        params.y;
+
+                                initialTouchX =
+                                        event.getRawX();
+
+                                initialTouchY =
+                                        event.getRawY();
+
+                                return true;
+
+                            case MotionEvent.ACTION_MOVE:
+
+                                params.x =
+                                        initialX +
+                                        (int) (
+                                                initialTouchX -
+                                                event.getRawX()
+                                        );
+
+                                params.y =
+                                        initialY +
+                                        (int) (
+                                                event.getRawY() -
+                                                initialTouchY
+                                        );
+
+                                try {
+
+                                    windowManager
+                                            .updateViewLayout(
+                                                    overlayView,
+                                                    params
+                                            );
+
+                                } catch (
+                                        Exception ignored
+                                ) {
+                                }
+
+                                return true;
+
+                            case MotionEvent.ACTION_UP:
+
+                                return true;
+                        }
+
+                        return false;
+                    }
+                }
+        );
+    }  
+// ============================================================
     // READ TARGET
     // ============================================================
 
@@ -1291,4 +1466,4 @@ WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
 
         return null;
     }
-                }
+}
